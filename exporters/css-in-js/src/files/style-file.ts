@@ -87,14 +87,14 @@ export function styleOutputFile(
   })
 
   // IDs of tokens declared as `const`s in this file — same-type refs to these
-  // can use the bare identifier instead of importing from another module.
+  // can use the bare identifier instead of importing from another module
   const localTokenIds = new Set(tokensOfType.map(t => t.id))
   // Tokens that the theme overrides (only populated when generating themed files).
   const overriddenTokenIds = theme
     ? new Set(theme.overriddenTokens.map(o => o.id))
     : new Set<string>()
 
-  // Token types whose peer themed file will exist alongside this one.
+  // Token types whose peer themed file will exist alongside this one
   const peerThemedTypes = new Set<TokenType>()
   if (themePath && theme) {
     for (const t of Object.values(TokenType)) {

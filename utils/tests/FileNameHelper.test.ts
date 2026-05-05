@@ -27,6 +27,33 @@ describe('FileNameHelper', () => {
     })
   })
 
+  describe('posixRelativeDir', () => {
+    it('returns sibling path with one parent hop', () => {
+      expect(FileNameHelper.posixRelativeDir('darkMode', 'base')).toBe('../base')
+    })
+
+    it('handles a multi-segment target dir', () => {
+      expect(FileNameHelper.posixRelativeDir('darkMode', 'tokens/base')).toBe('../tokens/base')
+    })
+
+    it('collapses common path prefixes', () => {
+      expect(FileNameHelper.posixRelativeDir('tokens/dark', 'tokens/base')).toBe('../base')
+    })
+
+    it('strips leading "./" and trailing "/" from inputs', () => {
+      expect(FileNameHelper.posixRelativeDir('./darkMode/', './base/')).toBe('../base')
+    })
+
+    it('returns "." when both paths point at the same dir', () => {
+      expect(FileNameHelper.posixRelativeDir('.', '.')).toBe('.')
+      expect(FileNameHelper.posixRelativeDir('a', 'a')).toBe('.')
+    })
+
+    it('handles deeper from-paths', () => {
+      expect(FileNameHelper.posixRelativeDir('a/b/c', 'd')).toBe('../../../d')
+    })
+  })
+
   describe('getDefaultStyleFileName', () => {
     it('should return correct filename for Color type with default extension', () => {
       expect(FileNameHelper.getDefaultStyleFileName(TokenType.color)).toBe('color.css')

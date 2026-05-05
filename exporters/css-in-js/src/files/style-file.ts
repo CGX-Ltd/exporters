@@ -14,40 +14,9 @@ function fileNameFor(type: TokenType): string {
   return raw.replace(/\.ts$/, "")
 }
 
-/**
- * Computes a posix-style relative path between two directory specs. Module specifiers
- * must use forward slashes regardless of host OS, and the Node `path` module is not
- * available in the bundled exporter runtime, so we implement the small bit we need.
- */
-function posixRelativeDir(from: string, to: string): string {
-  const fromSegments = from.split("/").filter(s => s && s !== ".")
-  const toSegments = to.split("/").filter(s => s && s !== ".")
-  let common = 0
-  while (
-    common < fromSegments.length &&
-    common < toSegments.length &&
-    fromSegments[common] === toSegments[common]
-  ) {
-    common++
-  }
-  const ups = "../".repeat(fromSegments.length - common)
-  const tail = toSegments.slice(common).join("/")
-  if (!ups && !tail) return "."
-  return (ups + tail).replace(/\/$/, "")
-}
-
-/**
- * Computes a relative module specifier from the themed-file directory to a base file.
- * Strips leading "./" and trailing "/" before computing the relative dir.
- */
+/** Module specifier from the themed-file directory to a base file (no .ts extension). */
 function relativeBaseImport(fromThemePath: string, fileNameWithoutExt: string): string {
-  const baseDir = exportConfiguration.baseStyleFilePath
-    .replace(/^\.\//, "")
-    .replace(/\/$/, "") || "."
-  const fromDir = fromThemePath
-    .replace(/^\.\//, "")
-    .replace(/\/$/, "") || "."
-  const rel = posixRelativeDir(fromDir, baseDir)
+  const rel = FileNameHelper.posixRelativeDir(fromThemePath, exportConfiguration.baseStyleFilePath)
   return `${rel}/${fileNameWithoutExt}`
 }
 

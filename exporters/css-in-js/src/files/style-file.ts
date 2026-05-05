@@ -85,18 +85,17 @@ export function styleOutputFile(
     return aHasRef === bHasRef ? 0 : aHasRef ? 1 : -1
   })
 
-  // Tokens that will land in this file. Bucket-1 (same-type local) refs resolve here.
+  // IDs of tokens declared as `const`s in this file — same-type refs to these
+  // can use the bare identifier instead of importing from another module.
   const localTokenIds = new Set(tokensOfType.map(t => t.id))
   // Tokens that the theme overrides (only populated when generating themed files).
   const overriddenTokenIds = theme
     ? new Set(theme.overriddenTokens.map(o => o.id))
     : new Set<string>()
 
-  // Token types for which a peer themed file will be generated in the same theme dir.
-  // - exportOnlyThemedTokens=true:  only types with overrides get a themed file.
-  // - exportOnlyThemedTokens=false: every type with any tokens gets a themed file
-  //   (themed file holds all tokens of that type with the theme applied).
-  // Must stay in lockstep with the null-return condition above (same predicate).
+  // Token types for which a peer themed file will exist alongside this one. Must match
+  // the skip-file-generation check above — if that gains a new skip reason, update here
+  // too, otherwise we emit imports pointing at files that were never written.
   const peerThemedTypes = new Set<TokenType>()
   if (themePath && theme) {
     for (const t of Object.values(TokenType)) {
@@ -108,7 +107,7 @@ export function styleOutputFile(
     }
   }
 
-  // Two import buckets — peer-themed (same theme dir) and base (relative to theme dir).
+  // Imports collected during ref resolution: peer-themed (same theme dir) vs base.
   const peerThemeImports = new Set<TokenType>()
   const baseImports = new Set<TokenType>()
 
@@ -123,14 +122,14 @@ export function styleOutputFile(
       tokenToVariableRef: (t) => {
         const refName = tokenObjectKeyName(t, tokenGroups, false)
 
-        // Bucket 1 — same-type local: bare identifier resolves to a const declared in this file.
+        // Same-type ref to a token declared in this file → bare identifier.
         if (t.tokenType === type && localTokenIds.has(t.id)) {
           return `\${${refName}}`
         }
 
-        // Bucket 2 — cross-type ref to a token that lives in a peer themed file.
-        // Peer file must exist (peerThemedTypes), and when exportOnlyThemedTokens=true the
-        // ref target must itself be overridden (peer file is filtered to overrides only).
+        // Cross-type ref where a peer themed file holds the target. With
+        // exportOnlyThemedTokens=true the peer file only contains overrides, so the
+        // target itself must be overridden; otherwise the peer file holds every token.
         if (themePath && t.tokenType !== type && peerThemedTypes.has(t.tokenType)) {
           const tokenIsInPeerFile = !exportConfiguration.exportOnlyThemedTokens
             || overriddenTokenIds.has(t.id)
@@ -140,8 +139,8 @@ export function styleOutputFile(
           }
         }
 
-        // Bucket 3 — import from base, aliased when same-type to avoid colliding with this
-        // file's own `${type}Tokens` export.
+        // Fall back to importing from the base file. Same-type imports get a `Base`
+        // alias to avoid colliding with this file's own `${type}Tokens` export.
         if (exportConfiguration.exportBaseValues) {
           baseImports.add(t.tokenType)
           const alias = t.tokenType === type
@@ -150,9 +149,8 @@ export function styleOutputFile(
           return `\${${alias}.${refName}}`
         }
 
-        // Bucket 4 — no base file to import from. Inline the resolved value by re-running
-        // tokenToCSS with allowReferences=false. CSSHelper recursively resolves all refs to
-        // literal values when allowReferences is false, so the result contains no ${...}.
+        // No base file to import from — inline the resolved value. allowReferences=false
+        // makes CSSHelper recurse all the way to literals, so the result has no ${...}.
         return CSSHelper.tokenToCSS(t, mappedTokens, {
           allowReferences: false,
           decimals: exportConfiguration.colorPrecision,
@@ -167,10 +165,8 @@ export function styleOutputFile(
     return `const ${name} = ${formatTokenValue(value)};`
   }).join('\n')
 
-  // Generate import statements:
-  //   - peer-themed imports point at sibling files in the same theme directory.
-  //   - base imports compute a relative path from this themed dir to the base dir,
-  //     and alias the same-type case to avoid clashing with this file's own export.
+  // Peer-theme imports are siblings; base imports use a relative path and alias
+  // same-type imports so they don't clash with this file's own export.
   const peerThemeImportLines = Array.from(peerThemeImports).map(t => {
     return `import { ${t}Tokens } from "./${fileNameFor(t)}";`
   })

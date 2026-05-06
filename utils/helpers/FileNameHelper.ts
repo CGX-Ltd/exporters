@@ -26,6 +26,40 @@ export class FileNameHelper {
   }
 
   /**
+   * Computes a posix-style relative path between two directory specs.
+   *
+   * Output module specifiers must use forward slashes regardless of host OS, and
+   * the Node `path` module is not always available in bundled exporter runtimes,
+   * so this implements the small subset we need without that dependency.
+   *
+   * Both inputs are interpreted as directory paths. Leading "./" and trailing
+   * "/" are stripped before computing.
+   *
+   * Examples:
+   *   posixRelativeDir("darkMode", "base")              -> "../base"
+   *   posixRelativeDir("darkMode", "tokens/base")       -> "../tokens/base"
+   *   posixRelativeDir("tokens/dark", "tokens/base")    -> "../base"
+   *   posixRelativeDir(".", ".")                        -> "."
+   */
+  static posixRelativeDir(from: string, to: string): string {
+    const normalize = (p: string) => p.replace(/^\.\//, "").replace(/\/$/, "") || "."
+    const fromSegments = normalize(from).split("/").filter(s => s && s !== ".")
+    const toSegments = normalize(to).split("/").filter(s => s && s !== ".")
+    let common = 0
+    while (
+      common < fromSegments.length &&
+      common < toSegments.length &&
+      fromSegments[common] === toSegments[common]
+    ) {
+      common++
+    }
+    const ups = "../".repeat(fromSegments.length - common)
+    const tail = toSegments.slice(common).join("/")
+    if (!ups && !tail) return "."
+    return (ups + tail).replace(/\/$/, "")
+  }
+
+  /**
    * Gets the default style file name for a token type
    */
   static getDefaultStyleFileName(

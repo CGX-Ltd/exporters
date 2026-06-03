@@ -10,7 +10,8 @@
   "author": "Supernova.io",
   "license": "MIT",
   "dependencies": {
-    "@supernovaio/export-utils": "file:../../utils"
+    "@supernovaio/export-utils": "file:../../utils",
+    "change-case": "^5.4.4"
   },
   "peerDependencies": {
     "@supernovaio/sdk-exporters": "2.3.3"

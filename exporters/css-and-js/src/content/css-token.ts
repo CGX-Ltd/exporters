@@ -2,6 +2,7 @@ import { NamingHelper, CSSHelper, GeneralHelper } from "@supernovaio/export-util
 import { Token, TokenGroup, TokenType } from "@supernovaio/sdk-exporters"
 import { exportConfiguration } from ".."
 import { DEFAULT_TOKEN_PREFIXES } from "../constants/defaults"
+import { strippedKebabOrNull } from "../utils/name-utils"
 
 /**
  * Gets the prefix for a specific token type based on configuration.
@@ -24,12 +25,23 @@ export function tokenVariableName(token: Token, tokenGroups: Array<TokenGroup>, 
   const prefix = getTokenPrefix(token.tokenType)
   const parent = tokenGroups.find((group) => group.id === token.parentGroupId)!
 
-  let name = NamingHelper.codeSafeVariableNameForToken(
-    token,
-    exportConfiguration.cssTokenNameStyle,
-    parent,
-    [exportConfiguration.globalNamePrefix, prefix].filter(Boolean).join("-")
-  )
+  // Build the name from the type prefix + group path (without the global prefix yet)
+  let name = NamingHelper.codeSafeVariableNameForToken(token, exportConfiguration.cssTokenNameStyle, parent, prefix)
+
+  // Strip a redundant leading prefix that the group path repeats (anchored on core/semantic).
+  // No-op unless an anchor segment is present.
+  const stripped = strippedKebabOrNull(name)
+  if (stripped) {
+    name = NamingHelper.codeSafeVariableName(stripped, exportConfiguration.cssTokenNameStyle)
+  }
+
+  // Prepend the global prefix after stripping so it is never removed
+  if (exportConfiguration.globalNamePrefix) {
+    name = NamingHelper.codeSafeVariableName(
+      [exportConfiguration.globalNamePrefix, name].join("-"),
+      exportConfiguration.cssTokenNameStyle
+    )
+  }
 
   // Append the theme name as a BEM-style modifier for the merged-theme-suffix mode
   if (themeSuffix) {

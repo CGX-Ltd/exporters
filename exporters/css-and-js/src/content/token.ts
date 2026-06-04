@@ -3,6 +3,7 @@ import { Token, TokenGroup, TokenType } from "@supernovaio/sdk-exporters"
 import { exportConfiguration } from ".."
 import { DEFAULT_TOKEN_PREFIXES } from "../constants/defaults"
 import { formatTokenValue } from "../utils/value-formatter"
+import { strippedKebabOrNull } from "../utils/name-utils"
 
 // Create a single instance of the tracker for consistent name generation
 export const tokenNameTracker = new TokenNameTracker()
@@ -19,6 +20,13 @@ export function tokenObjectKeyName(
 ): string {
   const prefix = getTokenPrefix(token.tokenType)
   let name = tokenNameTracker.getTokenName(token, tokenGroups, exportConfiguration.tokenNameStyle, prefix, forExport)
+
+  // Strip a redundant leading prefix that the group path repeats (anchored on core/semantic).
+  // No-op unless an anchor segment is present, so other tokens keep their tracker-assigned names.
+  const stripped = strippedKebabOrNull(name)
+  if (stripped) {
+    name = NamingHelper.codeSafeVariableName(stripped, exportConfiguration.tokenNameStyle)
+  }
 
   // Apply global prefix if configured
   if (exportConfiguration.globalNamePrefix) {

@@ -26,7 +26,7 @@ export function tokenVariableName(token: Token, tokenGroups: Array<TokenGroup>, 
 
   let name = NamingHelper.codeSafeVariableNameForToken(
     token,
-    exportConfiguration.tokenNameStyle,
+    exportConfiguration.cssTokenNameStyle,
     parent,
     [exportConfiguration.globalNamePrefix, prefix].filter(Boolean).join("-")
   )

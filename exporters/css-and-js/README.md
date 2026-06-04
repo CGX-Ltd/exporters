@@ -80,7 +80,8 @@ Here is a list of all the configuration options this exporter provides:
 - **globalNamePrefix:** Prefix all token names (e.g., 'ds_color_primary').
 - **customizeTokenPrefixes:** Customize the prefixes for each design token type.
 - **tokenPrefixes:** Define specific prefixes for each token type (when customizeTokenPrefixes is enabled).
-- **tokenNameStyle:** Define the naming convention of the exported tokens (camelCase, constantCase, flatCase, pascalCase, or snakeCase).
+- **tokenNameStyle:** Define the naming convention of the exported CSS-in-JS object keys (camelCase, constantCase, flatCase, pascalCase, or snakeCase).
+- **cssTokenNameStyle:** Define the naming convention of the exported CSS custom property names (CSS output only). Defaults to `kebabCase` to match standard CSS variable conventions (e.g. `--border-radius-small`).
 
 ### Token values
 - **colorFormat:** Set the format for color exports (HEX, RGB, HSL, OKLCH with various options).

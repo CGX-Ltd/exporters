@@ -52,6 +52,40 @@
         }
     },
     {
+        "key": "cssTokenNameStyle",
+        "type": "enum",
+        "default": "kebabCase",
+        "title": "CSS variable name format",
+        "description": "Export CSS custom property names in the selected case (CSS output only). Kebab-case matches standard CSS variable conventions.",
+        "category": "Token names",
+        "options": {
+            "kebabCase": {
+                "label": "Kebab case",
+                "description": "Example: --my-variable-name"
+            },
+            "camelCase": {
+                "label": "Camel case",
+                "description": "Example: --myVariableName"
+            },
+            "constantCase": {
+                "label": "Constant case",
+                "description": "Example: --MY_VARIABLE_NAME"
+            },
+            "snakeCase": {
+                "label": "Snake case",
+                "description": "Example: --my_variable_name"
+            },
+            "flatCase": {
+                "label": "Flat case",
+                "description": "Example: --myvariablename"
+            },
+            "pascalCase": {
+                "label": "Pascal case",
+                "description": "Example: --MyVariableName"
+            }
+        }
+    },
+    {
         "key": "colorFormat",
         "type": "enum",
         "default": "smartHashHex",

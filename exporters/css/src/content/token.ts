@@ -154,15 +154,12 @@ export function convertedToken(
 }
 
 export function tokenVariableName(token: Token, tokenGroups: Array<TokenGroup>, collections: Array<DesignSystemCollection> = []): string {
-  const prefix = getTokenPrefix(token.tokenType)
   const parent = tokenGroups.find((group) => group.id === token.parentGroupId)!
 
   let collection: DesignSystemCollection | null = null
   if (exportConfiguration.tokenNameStructure === TokenNameStructure.CollectionPathAndName && token.collectionId) {
     collection = collections.find((c) => c.persistentId === token.collectionId) ?? ({ name: token.collectionId } as DesignSystemCollection)
   }
-
-  const fullPrefix = [exportConfiguration.globalNamePrefix, prefix, collection?.name].filter(Boolean).join('-')
 
   const rawName = NamingHelper.codeSafeVariableNameForToken(
     token,
@@ -171,11 +168,11 @@ export function tokenVariableName(token: Token, tokenGroups: Array<TokenGroup>, 
     ''
   )
 
-  const segments = `${fullPrefix}-${rawName}`.split('-')
-  const deduped = segments.reduce((acc: string[], seg) => {
-    if (acc.length === 0 || acc[acc.length - 1] !== seg) acc.push(seg)
-    return acc
-  }, [])
+  // Strip everything before 'core' or 'semantic'
+  const segments = rawName.split('-')
+  const coreIndex = segments.findIndex((s: string) => s === 'core' || s === 'semantic')
+  const cleanedName = coreIndex !== -1 ? segments.slice(coreIndex).join('-') : rawName
 
-  return deduped.join('-')
+  const globalPrefix = exportConfiguration.globalNamePrefix
+  return [globalPrefix, cleanedName].filter(Boolean).join('-')
 }

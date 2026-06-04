@@ -1,0 +1,23 @@
+{
+    "id": "cgx.exporter-css-and-js",
+    "name": "CSS and JS",
+    "description": "Export your design tokens to CSS vars and CSS in JS variables and definitions.",
+    "author": "Ryan Lynch",
+    "organization": "CGX",
+    "homepage": "https://cgxapp.com",
+    "version": "1.0.0",
+    "usesBrands": true,
+    "usesThemes": true,
+    "executable": "/dist/build.js",
+    "engine": "latest",
+    "tags": [
+        "CSS",
+        "Tokens",
+        "CSS in JS",
+        "React",
+        "Vue",
+        "Styled Components",
+        "Emotion",
+        "New"
+    ]
+}

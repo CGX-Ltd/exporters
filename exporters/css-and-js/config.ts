@@ -47,8 +47,10 @@ export type ExporterConfiguration = {
   showDescriptions: boolean
   /** When enabled, values will use references to other tokens where applicable */
   useReferences: boolean
-  /** Style of exported token names */
+  /** Style of exported token names (used for CSS-in-JS object keys) */
   tokenNameStyle: StringCase
+  /** Style of exported CSS custom property names (CSS output only). Defaults to kebab-case to match standard CSS variable conventions */
+  cssTokenNameStyle: StringCase
   /** Format of the exported colors */
   colorFormat: ColorFormat
   /** Max number of decimals in colors */

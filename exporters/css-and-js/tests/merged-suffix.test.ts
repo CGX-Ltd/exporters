@@ -14,6 +14,7 @@ const baseConfig: ExporterConfiguration = {
   showDescriptions: false,
   useReferences: true,
   tokenNameStyle: StringCase.camelCase,
+  cssTokenNameStyle: StringCase.kebabCase,
   colorFormat: ColorFormat.smartHashHex,
   colorPrecision: 3,
   indent: 2,
@@ -69,19 +70,19 @@ describe("CSS merged-theme-suffix mode", () => {
 
   test("base values are emitted unsuffixed, overrides get a --theme suffixed variant", () => {
     const content = colorContent(mergedSuffixStyleFiles(allTokens, tokenGroups, themeSets), "css")
-    // Base values (all tokens, unsuffixed)
-    expect(content).toMatch(/--colorPrimary: #ffffff;/)
-    expect(content).toMatch(/--colorTertiary: var\(--colorPrimary\);/)
+    // Base values (all tokens, unsuffixed, kebab-case)
+    expect(content).toMatch(/--color-primary: #ffffff;/)
+    expect(content).toMatch(/--color-tertiary: var\(--color-primary\);/)
     // Overridden tokens get an extra --dark entry
-    expect(content).toMatch(/--colorPrimary--dark:/)
-    expect(content).toMatch(/--colorSecondary--dark:/)
+    expect(content).toMatch(/--color-primary--dark:/)
+    expect(content).toMatch(/--color-secondary--dark:/)
   })
 
   test("only overridden tokens get a suffixed entry (non-overridden tokens do not)", () => {
     const content = colorContent(mergedSuffixStyleFiles(allTokens, tokenGroups, themeSets), "css")
-    // colorGray / colorBlue are never overridden by darkTheme
-    expect(content).not.toMatch(/--colorGray--dark/)
-    expect(content).not.toMatch(/--colorBlue--dark/)
+    // color-gray / color-blue are never overridden by darkTheme
+    expect(content).not.toMatch(/--color-gray--dark/)
+    expect(content).not.toMatch(/--color-blue--dark/)
     // Exactly two suffixed declarations (primary + secondary)
     expect(content.match(/--color[\w-]+--dark:/g)).toHaveLength(2)
   })
@@ -89,13 +90,13 @@ describe("CSS merged-theme-suffix mode", () => {
   test("a suffixed entry referencing a same-theme override points at the suffixed variable", () => {
     // colorSecondaryDark references c-primary, which dark also overrides → must use --dark var
     const content = colorContent(mergedSuffixStyleFiles(allTokens, tokenGroups, themeSets), "css")
-    expect(content).toMatch(/--colorSecondary--dark: var\(--colorPrimary--dark\);/)
+    expect(content).toMatch(/--color-secondary--dark: var\(--color-primary--dark\);/)
   })
 
   test("a suffixed entry referencing a non-overridden token points at the base variable", () => {
     // colorPrimaryDark references c-base-gray, which dark does NOT override → base var
     const content = colorContent(mergedSuffixStyleFiles(allTokens, tokenGroups, themeSets), "css")
-    expect(content).toMatch(/--colorPrimary--dark: var\(--colorGray\);/)
+    expect(content).toMatch(/--color-primary--dark: var\(--color-gray\);/)
   })
 
   test("everything lives in a single :root block (no theme subfolders)", () => {
@@ -113,7 +114,7 @@ describe("CSS base style file", () => {
   test("wraps variables in the configured selector", () => {
     const file = cssStyleOutputFile(TokenType.color, allTokens, tokenGroups)!
     expect(file.content).toMatch(/^:root \{/)
-    expect(file.content).toMatch(/--colorPrimary: #ffffff;/)
+    expect(file.content).toMatch(/--color-primary: #ffffff;/)
     expect(file.name).toBe("color.css")
   })
 })

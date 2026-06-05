@@ -99,6 +99,26 @@ describe("CSS merged-theme-suffix mode", () => {
     expect(content).toMatch(/--color-primary--dark: var\(--color-gray\);/)
   })
 
+  test("alphabetical sort groups each base variable with its themed variants", () => {
+    setConfig({ tokenSortOrder: TokenSortOrder.Alphabetical })
+    const content = colorContent(mergedSuffixStyleFiles(allTokens, tokenGroups, themeSets), "css")
+    const order = [
+      "--color-blue:",
+      "--color-gray:",
+      "--color-primary:",
+      "--color-primary--dark:",
+      "--color-secondary:",
+      "--color-secondary--dark:",
+      "--color-tertiary:",
+    ]
+    const indices = order.map((s) => content.indexOf(s))
+    expect(indices.every((i) => i >= 0)).toBe(true)
+    // strictly increasing → base sits immediately before its --dark variant
+    for (let i = 1; i < indices.length; i++) {
+      expect(indices[i]).toBeGreaterThan(indices[i - 1])
+    }
+  })
+
   test("everything lives in a single :root block (no theme subfolders)", () => {
     const files = mergedSuffixStyleFiles(allTokens, tokenGroups, themeSets)
     const colorFile = files.find((f) => f.name === "color.css")!

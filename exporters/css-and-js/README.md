@@ -118,7 +118,7 @@ Here is a list of all the configuration options this exporter provides:
 - **baseStyleFilePath:** Directory path for files relative to export root.
 - **customizeStyleFileNames:** Enable custom file names for each token type.
 - **styleFileNames:** Define specific file names for each token type (when customizeStyleFileNames is enabled).
-- **tokenSortOrder:** Control how token names are sorted in generated files (default order or alphabetical).
+- **tokenSortOrder:** Control how tokens are ordered in generated files (default order or alphabetical). Applies to both CSS variables and CSS-in-JS objects. With `alphabetical` in the merged-theme-suffix mode, each base variable sits directly beside its themed variants (e.g. `--dimension-margin`, `--dimension-margin--large`, `--dimension-margin--medium`, …).
 
 ### Other
 - **showDescriptions:** Display descriptions for each token as code comments.

@@ -1,9 +1,19 @@
 import { FileHelper, ThemeHelper, FileNameHelper, GeneralHelper } from "@supernovaio/export-utils"
 import { OutputTextFile, Token, TokenGroup, TokenType, TokenTheme } from "@supernovaio/sdk-exporters"
 import { exportConfiguration } from ".."
-import { convertedToken, analyzeTokensForRgbUtilities } from "../content/css-token"
+import { convertedToken, analyzeTokensForRgbUtilities, tokenVariableName } from "../content/css-token"
 import { DEFAULT_STYLE_FILE_NAMES } from "../constants/defaults"
-import { FileStructure } from "../../config"
+import { FileStructure, TokenSortOrder } from "../../config"
+
+/** Sorts tokens alphabetically by their generated CSS variable name when configured, else keeps order. */
+function sortTokensByName(tokens: Array<Token>, tokenGroups: Array<TokenGroup>): Array<Token> {
+  if (exportConfiguration.tokenSortOrder !== TokenSortOrder.Alphabetical) {
+    return tokens
+  }
+  return [...tokens].sort((a, b) =>
+    tokenVariableName(a, tokenGroups).localeCompare(tokenVariableName(b, tokenGroups))
+  )
+}
 
 /** CSS file name for a token type, honoring customizeStyleFileNames and forcing a `.css` extension. */
 function cssFileNameFor(type: TokenType): string {
@@ -85,7 +95,7 @@ export function styleOutputFile(
   const mappedTokens = new Map(tokens.map((token) => [token.id, token]))
   const colorTokensNeedingRgb = analyzeTokensForRgbUtilities(tokens)
 
-  const cssVariables = tokensOfType
+  const cssVariables = sortTokensByName(tokensOfType, tokenGroups)
     .map((token) => convertedToken(token, mappedTokens, tokenGroups, colorTokensNeedingRgb))
     .join("\n")
 
@@ -121,7 +131,7 @@ function generateCombinedStyleFile(
   const mappedTokens = new Map(tokens.map((token) => [token.id, token]))
   const colorTokensNeedingRgb = analyzeTokensForRgbUtilities(tokens)
 
-  const cssVariables = processedTokens
+  const cssVariables = sortTokensByName(processedTokens, tokenGroups)
     .map((token) => convertedToken(token, mappedTokens, tokenGroups, colorTokensNeedingRgb))
     .join("\n")
 
@@ -172,11 +182,15 @@ function mergedSuffixFileForType(
 ): OutputTextFile | null {
   const ofType = (tokens: Array<Token>) => (type === null ? tokens : tokens.filter((t) => t.tokenType === type))
 
-  const baseOfType = ofType(baseTokens)
   const baseRgb = analyzeTokensForRgbUtilities(baseTokens)
   const baseMapped = new Map(baseTokens.map((t) => [t.id, t]))
 
-  const lines: Array<string> = baseOfType.map((token) => convertedToken(token, baseMapped, tokenGroups, baseRgb))
+  // Collect every declaration with its final variable name so they can be sorted together
+  // (base token + its themed variants grouped, when alphabetical sorting is enabled).
+  const entries: Array<{ name: string; line: string }> = ofType(baseTokens).map((token) => ({
+    name: tokenVariableName(token, tokenGroups),
+    line: convertedToken(token, baseMapped, tokenGroups, baseRgb),
+  }))
 
   for (const set of themeSets) {
     const overriddenIds = new Set(set.theme.overriddenTokens.map((o) => o.id))
@@ -185,15 +199,22 @@ function mergedSuffixFileForType(
     const overriddenOfType = ofType(set.themedTokens).filter((t) => overriddenIds.has(t.id))
 
     for (const token of overriddenOfType) {
-      lines.push(convertedToken(token, themedMapped, tokenGroups, themedRgb, set.suffix, overriddenIds))
+      entries.push({
+        name: tokenVariableName(token, tokenGroups, set.suffix),
+        line: convertedToken(token, themedMapped, tokenGroups, themedRgb, set.suffix, overriddenIds),
+      })
     }
   }
 
-  if (lines.length === 0 && !exportConfiguration.generateEmptyFiles) {
+  if (entries.length === 0 && !exportConfiguration.generateEmptyFiles) {
     return null
   }
 
-  const content = wrapInSelector(lines.join("\n"), "")
+  if (exportConfiguration.tokenSortOrder === TokenSortOrder.Alphabetical) {
+    entries.sort((a, b) => a.name.localeCompare(b.name))
+  }
+
+  const content = wrapInSelector(entries.map((e) => e.line).join("\n"), "")
 
   return FileHelper.createTextFile({
     relativePath: type === null ? "./" : exportConfiguration.baseStyleFilePath,

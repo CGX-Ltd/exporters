@@ -10,6 +10,7 @@ import { cssIndexOutputFile } from "./files/css-index-file"
 import { StringCase, ThemeHelper, WriteTokenPropStore } from "@supernovaio/export-utils"
 import { tokenObjectKeyName } from "./content/token"
 import { tokenVariableName } from "./content/css-token"
+import { partitionThemesForSuffix } from "./utils/theme-utils"
 
 /** Exporter configuration from the resolved default configuration and user overrides */
 export const exportConfiguration = Pulsar.exportConfig<ExporterConfiguration>()
@@ -96,14 +97,28 @@ function generateJsFiles(
     }
 
     case ThemeExportStyle.MergedThemeSuffix: {
-      const themeSets = buildThemeSuffixSets(sdk, tokens, themesToApply)
+      const { merged, separate } = partitionThemesForSuffix(themesToApply)
+      const themeSets = buildThemeSuffixSets(sdk, tokens, merged)
       const suffixFiles = jsMergedSuffixStyleFiles(tokens, tokenGroups, themeSets)
+      // Themes the user opted out of merging are emitted as separate theme folders (as in SeparateFiles)
+      const separateThemeFiles = separate.flatMap((theme) => {
+        const themedTokens = sdk.tokens.computeTokensByApplyingThemes(tokens, tokens, [theme])
+        const themePath = ThemeHelper.getThemeIdentifier(theme, StringCase.camelCase)
+        const files: Array<AnyOutputFile | null> = Object.values(TokenType).map((type) =>
+          styleOutputFile(type, themedTokens, tokenGroups, themePath, theme)
+        )
+        if (exportConfiguration.generateFolderIndexFiles) {
+          files.push(folderIndexOutputFile(themedTokens, themePath, theme))
+        }
+        return files
+      })
       return processOutputFiles([
         ...suffixFiles,
+        ...separateThemeFiles,
         ...(exportConfiguration.generateFolderIndexFiles
           ? [folderIndexOutputFile(tokens, exportConfiguration.baseStyleFilePath)]
           : []),
-        ...(exportConfiguration.generateIndexFile ? [indexOutputFile(tokens)] : []),
+        ...(exportConfiguration.generateIndexFile ? [indexOutputFile(tokens, separate)] : []),
         ...typeDefs(tokens),
       ])
     }
@@ -147,9 +162,15 @@ function generateCssFiles(
     }
 
     case ThemeExportStyle.MergedThemeSuffix: {
-      const themeSets = buildThemeSuffixSets(sdk, tokens, themesToApply)
+      const { merged, separate } = partitionThemesForSuffix(themesToApply)
+      const themeSets = buildThemeSuffixSets(sdk, tokens, merged)
       const suffixFiles = mergedSuffixStyleFiles(tokens, tokenGroups, themeSets)
-      return processOutputFiles([...suffixFiles, cssIndexOutputFile(tokens)])
+      // Themes the user opted out of merging are emitted as separate .theme-{theme} files
+      const separateFiles = separate.flatMap((theme) => {
+        const themedTokens = sdk.tokens.computeTokensByApplyingThemes(tokens, tokens, [theme])
+        return generateCssStyleFiles(themedTokens, tokenGroups, ThemeHelper.getThemeIdentifier(theme), theme)
+      })
+      return processOutputFiles([...suffixFiles, ...separateFiles, cssIndexOutputFile(tokens, separate)])
     }
 
     default:

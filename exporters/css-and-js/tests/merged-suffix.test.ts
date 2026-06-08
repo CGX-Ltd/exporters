@@ -2,7 +2,7 @@ import { describe, test, expect, beforeEach } from "@jest/globals"
 import { TokenType } from "@supernovaio/sdk-exporters"
 import { StringCase, ColorFormat } from "@supernovaio/export-utils"
 import { ThemeExportStyle, TokenSortOrder, OutputType, FileStructure, ExporterConfiguration } from "../config"
-import { tokenGroups, allTokens, tokensWithDarkApplied, darkTheme } from "./fixtures/tokens"
+import { tokenGroups, allTokens, tokensWithDarkApplied, darkTheme, darkColorOnlyTheme } from "./fixtures/tokens"
 
 const baseConfig: ExporterConfiguration = {
   outputType: OutputType.Both,
@@ -25,6 +25,7 @@ const baseConfig: ExporterConfiguration = {
   baseIndexFilePath: "./",
   exportThemesAs: ThemeExportStyle.MergedThemeSuffix,
   exportOnlyThemedTokens: false,
+  mergedSuffixExcludedThemes: [],
   exportBaseValues: true,
   forceRemUnit: false,
   remBase: 16,
@@ -58,7 +59,9 @@ const setConfig = (overrides: Partial<ExporterConfiguration>) => {
 // Import AFTER mock setup
 const { mergedSuffixStyleFiles } = require("../src/files/css-style-file") as typeof import("../src/files/css-style-file")
 const { jsMergedSuffixStyleFiles } = require("../src/files/merged-suffix-style-file") as typeof import("../src/files/merged-suffix-style-file")
-const { styleOutputFile: cssStyleOutputFile } = require("../src/files/css-style-file") as typeof import("../src/files/css-style-file")
+const { styleOutputFile: cssStyleOutputFile, generateStyleFiles: generateCssStyleFiles } =
+  require("../src/files/css-style-file") as typeof import("../src/files/css-style-file")
+const { partitionThemesForSuffix } = require("../src/utils/theme-utils") as typeof import("../src/utils/theme-utils")
 
 const themeSets = [{ suffix: "dark", themedTokens: tokensWithDarkApplied, theme: darkTheme }]
 
@@ -136,6 +139,39 @@ describe("CSS base style file", () => {
     expect(file.content).toMatch(/^:root \{/)
     expect(file.content).toMatch(/--color-primary: #ffffff;/)
     expect(file.name).toBe("color.css")
+  })
+})
+
+describe("merged-theme-suffix: themes kept as separate files (mergedSuffixExcludedThemes)", () => {
+  beforeEach(() => setConfig({}))
+
+  test("partition splits a named theme out (case-insensitive) and merges the rest", () => {
+    setConfig({ mergedSuffixExcludedThemes: ["dark"] })
+    const { merged, separate } = partitionThemesForSuffix([darkTheme, darkColorOnlyTheme])
+    expect(separate.map((t) => t.name)).toEqual(["Dark"])
+    expect(merged.map((t) => t.name)).toEqual(["DarkColorOnly"])
+  })
+
+  test("empty config keeps every theme merged", () => {
+    setConfig({ mergedSuffixExcludedThemes: [] })
+    const { merged, separate } = partitionThemesForSuffix([darkTheme])
+    expect(separate).toHaveLength(0)
+    expect(merged).toHaveLength(1)
+  })
+
+  test("a separated theme is fully excluded from the merged :root file", () => {
+    // Orchestrator builds the merged file from `merged` only — dark is separated, so no themeSets.
+    const content = colorContent(mergedSuffixStyleFiles(allTokens, tokenGroups, []), "css")
+    expect(content).toMatch(/--color-primary: #ffffff;/)
+    expect(content).not.toMatch(/--dark/)
+  })
+
+  test("a separated theme is emitted as a .theme-{theme} file under its own folder", () => {
+    const files = generateCssStyleFiles(tokensWithDarkApplied, tokenGroups, "dark", darkTheme)
+    const colorFile = files.find((f) => f.path === "./dark" && f.name === "color.css")!
+    expect(colorFile).toBeDefined()
+    expect(colorFile.content).toMatch(/^\.theme-dark \{/)
+    expect(colorFile.content).toMatch(/--color-primary: var\(--color-gray\);/)
   })
 })
 

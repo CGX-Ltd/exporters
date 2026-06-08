@@ -216,6 +216,14 @@
         }
     },
     {
+        "key": "mergedSuffixExcludedThemes",
+        "type": "array",
+        "default": [],
+        "title": "Themes to keep as separate files",
+        "description": "Only applies when 'Theme export format' is 'Merged into base with theme suffix'. List theme names (as shown when selecting themes) that should NOT be merged into the suffix output and should instead be exported as separate .theme-{theme} files/folders. Matched by theme name (case-insensitive). Useful for keeping e.g. a dark theme scoped under a .theme-dark selector.",
+        "category": "Themes"
+    },
+    {
         "key": "exportOnlyThemedTokens",
         "type": "boolean",
         "default": false,

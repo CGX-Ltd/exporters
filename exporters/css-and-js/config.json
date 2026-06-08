@@ -216,7 +216,7 @@
         }
     },
     {
-        "key": "mergedSuffixSeparateThemes",
+        "key": "mergedSuffixExcludedThemes",
         "type": "array",
         "default": [],
         "title": "Themes to keep as separate files",

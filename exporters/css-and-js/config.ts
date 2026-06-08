@@ -71,7 +71,7 @@ export type ExporterConfiguration = {
   exportThemesAs: ThemeExportStyle
   /** Theme names (as shown in Supernova) to emit as separate .theme-{theme} files instead of
    *  merging them into the suffix output. Only applies when exportThemesAs === mergedThemeSuffix. */
-  mergedSuffixSeparateThemes: Array<string>
+  mergedSuffixExcludedThemes: Array<string>
   /** When enabled, themed files will only include tokens that have different values from the base theme */
   exportOnlyThemedTokens: boolean
   /** When enabled, base token values will be exported along with themes */

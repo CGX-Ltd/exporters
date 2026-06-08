@@ -25,6 +25,7 @@ const baseConfig: ExporterConfiguration = {
   baseIndexFilePath: "./",
   exportThemesAs: ThemeExportStyle.MergedThemeSuffix,
   exportOnlyThemedTokens: false,
+  mergedSuffixExcludedThemes: [],
   exportBaseValues: true,
   forceRemUnit: false,
   remBase: 16,
@@ -141,18 +142,18 @@ describe("CSS base style file", () => {
   })
 })
 
-describe("merged-theme-suffix: themes kept as separate files (mergedSuffixSeparateThemes)", () => {
+describe("merged-theme-suffix: themes kept as separate files (mergedSuffixExcludedThemes)", () => {
   beforeEach(() => setConfig({}))
 
   test("partition splits a named theme out (case-insensitive) and merges the rest", () => {
-    setConfig({ mergedSuffixSeparateThemes: ["dark"] })
+    setConfig({ mergedSuffixExcludedThemes: ["dark"] })
     const { merged, separate } = partitionThemesForSuffix([darkTheme, darkColorOnlyTheme])
     expect(separate.map((t) => t.name)).toEqual(["Dark"])
     expect(merged.map((t) => t.name)).toEqual(["DarkColorOnly"])
   })
 
   test("empty config keeps every theme merged", () => {
-    setConfig({ mergedSuffixSeparateThemes: [] })
+    setConfig({ mergedSuffixExcludedThemes: [] })
     const { merged, separate } = partitionThemesForSuffix([darkTheme])
     expect(separate).toHaveLength(0)
     expect(merged).toHaveLength(1)
